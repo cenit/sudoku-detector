@@ -2,9 +2,13 @@
 //#include <opencv2/highgui.hpp>
 //#include <opencv2/imgproc.hpp>
 //#include <opencv2/ml.hpp>
-#include <opencv/cv.h>
+#include <opencv/cv.hpp>
 #include <opencv/highgui.h>
 #include <opencv/ml.h>
+
+
+
+typedef unsigned char BYTE;
 
 using namespace cv;
 using namespace cv::ml;
@@ -25,6 +29,6 @@ private:
 	int readFlippedInteger(FILE *fp);
 
 private:
-	KNearest	*knn;
+	Ptr<ml::KNearest> knn;
 	int numRows, numCols, numImages;
 };

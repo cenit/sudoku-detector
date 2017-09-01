@@ -3,7 +3,7 @@
 
 DigitRecognizer::DigitRecognizer()
 {
-	knn = new KNearest();
+	knn = ml::KNearest::create();
 }
 
 DigitRecognizer::~DigitRecognizer()
