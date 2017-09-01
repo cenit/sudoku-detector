@@ -1,206 +1,51 @@
-// Sudoku Solver.cpp : Defines the entry point for the console application.
-//
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include "sudoku-tools.h"
 
-using namespace cv;
-using namespace std;
-
-// Record the execution time of some code, in milliseconds.
-#define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
-#define START_TIMING(s)    timeStart_##s = cvGetTickCount()
-#define STOP_TIMING(s) 	   timeDiff_##s = (double)(cvGetTickCount() - timeStart_##s); timeTally_##s += timeDiff_##s; countTally_##s++
-#define GET_TIMING(s) 	   (double)(timeDiff_##s / (cvGetTickFrequency()*1000.0))
-#define GET_AVERAGE_TIMING(s)   (double)(countTally_##s ? timeTally_##s/ ((double)countTally_##s * cvGetTickFrequency()*1000.0) : 0)
-#define CLEAR_AVERAGE_TIMING(s) timeTally_##s = 0; countTally_##s = 0
-
-void drawLine(Vec2f line, Mat &img, Scalar rgb = CV_RGB(0,0,255))
-{
-	if(line[1]!=0)
-	{
-		float m = -1/tan(line[1]);
-		float c = line[0]/sin(line[1]);
-		
-		cv::line(img, Point(0, c), Point(img.size().width, m*img.size().width+c), rgb);
-	}
-	else
-	{
-		cv::line(img, Point(line[0], 0), Point(line[0], img.size().height), rgb);
-	}
-}
-
-void drawLine(Vec4i line, Mat &img)
-{
-	cv::line(img, Point(line[0], line[1]), Point(line[2], line[3]), CV_RGB(255,0,255));
-}
-
-void mergeRelatedLines(vector<Vec2f> *lines, Mat &img)
-{
-	vector<Vec2f>::iterator current;
-	vector<Vec4i> points(lines->size());
-	for(current=lines->begin();current!=lines->end();current++)
-	{
-		if((*current)[0]==0 && (*current)[1]==-100)
-		continue;
-		
-		float p1 = (*current)[0];
-		float theta1 = (*current)[1];
-		
-		Point pt1current, pt2current;
-		if(theta1>CV_PI*45/180 && theta1<CV_PI*135/180)
-		{
-			pt1current.x=0;
-			pt1current.y = p1/sin(theta1);
-			
-			pt2current.x=img.size().width;
-			pt2current.y=-pt2current.x/tan(theta1) + p1/sin(theta1);
-		}
-		else
-		{
-			pt1current.y=0;
-			pt1current.x=p1/cos(theta1);
-			
-			pt2current.y=img.size().height;
-			pt2current.x=-pt2current.y/tan(theta1) + p1/cos(theta1);
-		}
-		
-		vector<Vec2f>::iterator	pos;
-		for(pos=lines->begin();pos!=lines->end();pos++)
-		{
-			if(*current==*pos)
-			continue;
-			
-			if(fabs((*pos)[0]-(*current)[0])<20 && fabs((*pos)[1]-(*current)[1])<CV_PI*10/180)
-			{
-				float p = (*pos)[0];
-				float theta = (*pos)[1];
-				
-				Point pt1, pt2;
-				if((*pos)[1]>CV_PI*45/180 && (*pos)[1]<CV_PI*135/180)
-				{
-					pt1.x=0;
-					pt1.y = p/sin(theta);
-					
-					pt2.x=img.size().width;
-					pt2.y=-pt2.x/tan(theta) + p/sin(theta);
-				}
-				else
-				{
-					pt1.y=0;
-					pt1.x=p/cos(theta);
-					
-					pt2.y=img.size().height;
-					pt2.x=-pt2.y/tan(theta) + p/cos(theta);
-				}
-				
-				if(((double)(pt1.x-pt1current.x)*(pt1.x-pt1current.x) + (pt1.y-pt1current.y)*(pt1.y-pt1current.y)<64*64) && ((double)(pt2.x-pt2current.x)*(pt2.x-pt2current.x) + (pt2.y-pt2current.y)*(pt2.y-pt2current.y)<64*64))
-				{
-					printf("Merging\n");
-					// Merge the two
-					(*current)[0] = ((*current)[0]+(*pos)[0])/2;
-					(*current)[1] = ((*current)[1]+(*pos)[1])/2;
-					
-					(*pos)[0]=0;
-					(*pos)[1]=-100;
-					//lines->erase(pos);
-				}
-			}
-		}
-	}
-	
-	//return lines;
-}
-
-void findX(IplImage* imgSrc,int* min, int* max){
-	int i;
-	int minFound=0;
-	CvMat data;
-	CvScalar maxVal=cvRealScalar(imgSrc->width * 255);
-	CvScalar val=cvRealScalar(0);
-	//For each col sum, if sum < width*255 then we find the min 
-	//then continue to end to search the max, if sum< width*255 then is new max
-	for (i=0; i< imgSrc->width; i++){
-		cvGetCol(imgSrc, &data, i);
-		val= cvSum(&data);
-		if(val.val[0] < maxVal.val[0]){
-			*max= i;
-			if(!minFound){
-				*min= i;
-				minFound= 1;
-			}
-		}
-	}
-}
-
-void findY(IplImage* imgSrc,int* min, int* max){
-	int i;
-	int minFound=0;
-	CvMat data;
-	CvScalar maxVal=cvRealScalar(imgSrc->width * 255);
-	CvScalar val=cvRealScalar(0);
-	//For each col sum, if sum < width*255 then we find the min 
-	//then continue to end to search the max, if sum< width*255 then is new max
-	for (i=0; i< imgSrc->height; i++)
-	{
-		cvGetRow(imgSrc, &data, i);
-		val= cvSum(&data);
-		if(val.val[0] < maxVal.val[0]){
-			*max=i;
-			if(!minFound){
-				*min= i;
-				minFound= 1;
-			}
-		}
-	}
-}
-
-CvRect findBB(Mat imgSrc)
-{
-	CvRect aux;
-	int xmin, xmax, ymin, ymax;
-	xmin=xmax=ymin=ymax=0;
-	
-	IplImage toCheck = imgSrc;
-	
-	findX(&toCheck, &xmin, &xmax);
-	findY(&toCheck, &ymin, &ymax);
-	
-	aux=cvRect(xmin, ymin, xmax-xmin, ymax-ymin);
-	
-	return aux;
-	
-}
 
 int main()
 {
+	// We load the image in grayscale mode. We don't want to bother with the colour information, so just skip it. 
 	Mat sudoku = imread("../data/sudoku-original.jpg",0);
 	
+	// we create a blank image of the same size. This image will hold the actual outer box of puzzle:
 	Mat original = sudoku.clone();
-	
-	DECLARE_TIMING(sudTimer);
-	START_TIMING(sudTimer);
 	
 	// Create a duplicate. We'll try to extract grid lines in this image
 	Mat outerBox = Mat(sudoku.size(), CV_8UC1);
 	
-	//erode(sudoku, sudoku, kernel);
-	
+	// Blur the image a little. This smooths out the noise a bit and makes extracting the grid lines easier.
 	GaussianBlur(sudoku, sudoku, Size(11,11), 0);
+
+	// With the noise smoothed out, we can now threshold the image. 
+	// The image can have varying illumination levels, so a good choice for a thresholding algorithm would be an adaptive threshold.
+	// It calculates a threshold level several small windows in the image. 
+	// This threshold level is calculated using the mean level in the window, so it keeps things illumination independent.
+	// It calculates a mean over a 5x5 window and subtracts 2 from the mean. This is the threshold level for every pixel.
 	adaptiveThreshold(sudoku, outerBox, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
 	
+	// Since we're interested in the borders, and they are black, we invert the image outerBox. 
+	// Then, the borders of the puzzles are white (along with other noise).
 	bitwise_not(outerBox, outerBox);
 	
-	Mat kernel = (Mat_<uchar>(3,3) << 0,1,0,1,1,1,0,1,0);
+	// This thresholding operation can disconnect certain connected parts (like lines). 
+	// So dilating the image once will fill up any small "cracks" that might have crept in.
+	// Note that I've used a plus shaped structuring element here (the kernel matrix).
+	Mat kernel = (Mat_<uchar>(3,3) << 0,1,0, 1,1,1, 0,1,0);
 	dilate(outerBox, outerBox, kernel);
 	
+
+	// Finding the biggest blob
+	// First, I use the floodfill command. This command returns a bounding rectangle of the pixels it filled. 
+	// We've assumed the biggest thing in the picture to be the puzzle. So the biggest blob should have be the puzzle. 
+	// Since it is the biggest, it will have the biggest bounding box as well. 
+	// So we find the biggest bounding box, and save the location where we did the flood fill.
+	// We iterate through the image. The >=128 condition is to ensure that only the white parts are flooded. 
+	// Whenever we encounter such a part, we flood it with a dark gray colour (gray level 64). 
+	// So in the future, we won't be reflooding these blobs. And whenever we encounter a big blob, we note the current point and the area it has.
 	int count=0;
 	int max=-1;
 	Point maxPt;
-	
 	Mat cloneOuterBox = outerBox.clone();
-	
 	for(int y=0;y<outerBox.size().height;y++)
 	{
 		uchar *row = outerBox.ptr(y);
@@ -217,11 +62,14 @@ int main()
 				}
 			}
 		}
-		//printf("Current row: %d\n", y);
 	}
 	
+	// Now, we have several blobs filled with a dark gray colour (level 64). 
+	// And we also know the point what produces a blob with maximum area. So we floodfill that point with white
 	floodFill(outerBox, maxPt, CV_RGB(255,255,255));
 	
+	// Now, the biggest blob is white. We need to turn the other blobs black. We do that here.
+	// Wherever a dark gray point is enountered, it is flooded with black, effectively "hiding" it.
 	for(int y=0;y<outerBox.size().height;y++)
 	{
 		uchar *row = outerBox.ptr(y);
@@ -235,16 +83,23 @@ int main()
 		//printf("Current row: %d\n", y);
 	}
 	
+	// Because we had dilated the image earlier, we'll "restore" it a bit by eroding it:
 	erode(outerBox, outerBox, kernel);
-	
 	//imshow("thresholded", outerBox);
 	
+
+	// Detecting lines
+	// At this point, we have a single blob. Now its time to find lines. This is done with the Hough transform. 
+	// OpenCV comes with it. So a line of code is all that's needed.
 	vector<Vec2f> lines;
 	HoughLines(outerBox, lines, 1, CV_PI/180, 200);
 	
-	//vector<Vec2f>::iterator pos;
+	// Each physical line has several possible approximations. This is usually because the physical line is thick. 
+	// So, just these lines aren't enough for figuring out where the puzzle is located. We'll have to do some math with these lines.
+	// One way to fix this is to "merge" lines that are close by. We wrote mergeRelatedLines to do it!
 	mergeRelatedLines(&lines, sudoku);
 	
+	// Then we draw our lines in the image
 	printf("Size of lines: %d\n", ((int)lines.size()));
 	for(int i=0;i<lines.size();i++)
 	{
@@ -253,25 +108,32 @@ int main()
 	
 	imshow("thresholded", outerBox);
 	
-	// Now detect the lines on extremes
-	Vec2f topEdge = Vec2f(1000,1000);	double topYIntercept=100000, topXIntercept=0;
-	Vec2f bottomEdge = Vec2f(-1000,-1000);		double bottomYIntercept=0, bottomXIntercept=0;
-	Vec2f leftEdge = Vec2f(1000,1000);	double leftXIntercept=100000, leftYIntercept=0;
+	// We'll try and detect lines that are nearest to the top edge, bottom edge, right edge and the left edge. 
+	// These will be the outer boundaries of the sudoku puzzle. We start by adding these lines after the mergeRelatedLines call.
+	// The initial values of each edge is initially set to a ridiculous value. This will ensure it gets to the proper edge later on. 
+	Vec2f topEdge = Vec2f(1000,1000);	      double topYIntercept=100000, topXIntercept=0;
+	Vec2f bottomEdge = Vec2f(-1000,-1000);	double bottomYIntercept=0, bottomXIntercept=0;
+	Vec2f leftEdge = Vec2f(1000,1000);	    double leftXIntercept=100000, leftYIntercept=0;
 	Vec2f rightEdge = Vec2f(-1000,-1000);		double rightXIntercept=0, rightYIntercept=0;
+
+	// Now we loop over all lines:
 	for(int i=0;i<lines.size();i++)
 	{
 		Vec2f current = lines[i];
-		
+		// We store the rho and theta values. 
 		float p=current[0];
 		float theta=current[1];
 		
-		if(p==0 && theta==-100)
-		continue;
+		// If we encounter a "merged" line, we simply skip it
+		if(p==0 && theta==-100) continue;
 		
+		// Now we use the normal form of line to calculate the x and y intercepts (the place where the lines intersects the X and Y axis)
 		double xIntercept, yIntercept;
 		xIntercept = p/cos(theta);
 		yIntercept = p/(cos(theta)*sin(theta));
 		
+		// We will ignore any line that has slope different from horizontal or vertical. 
+		// Vertical case:
 		if(theta>CV_PI*80/180 && theta<CV_PI*100/180)
 		{
 			if(p<topEdge[0])
@@ -279,18 +141,10 @@ int main()
 			
 			if(p>bottomEdge[0])
 			bottomEdge = current;
-			
-			//printf("X: %f, Y: %f\n", xIntercept, yIntercept);
-			
 		}
+		// Horizontal case:
 		else if(theta<CV_PI*10/180 || theta>CV_PI*170/180)
 		{
-			/*if(p<leftEdge[0])
-			leftEdge = current;
-			
-			if(p>rightEdge[0])
-			rightEdge = current;*/
-			
 			if(xIntercept>rightXIntercept)
 			{
 				rightEdge = current;
@@ -304,12 +158,19 @@ int main()
 		}
 	}
 	
-	
+	// Just for visualizing it, we'll draw those lines on the original image:
 	drawLine(topEdge, sudoku, CV_RGB(0,0,0));
 	drawLine(bottomEdge, sudoku, CV_RGB(0,0,0));
 	drawLine(leftEdge, sudoku, CV_RGB(0,0,0));
 	drawLine(rightEdge, sudoku, CV_RGB(0,0,0));
 	
+
+	// Next, we'll calculate the intersections of these four lines. First, we find two points on each line. 
+	// Then using some math, we can calculate exactly where any two particular lines intersect.
+	// The code below finds two points on a line. The right and left edges need the "if" construct. 
+	// These edges are vertical. They can have infinite slope, something a computer cannot represent. 
+	// So I check if they have infinite slope or not. If it does, calculate two points using a "safe" method. 
+	// Otherwise, the normal method can be used.
 	Point left1, left2, right1, right2, bottom1, bottom2, top1, top2;
 	
 	int height=outerBox.size().height;
@@ -343,7 +204,7 @@ int main()
 	top1.x=0;		top1.y=topEdge[0]/sin(topEdge[1]);
 	top2.x=width;	top2.y=-top2.x/tan(topEdge[1]) + top1.y;
 	
-	// Next, we find the intersection of  these four lines
+	// This part calculates the actual intersection points
 	double leftA = left2.y-left1.y;
 	double leftB = left1.x-left2.x;
 	double leftC = leftA*left1.x + leftB*left1.y;
@@ -376,39 +237,44 @@ int main()
 	double detBottomLeft = leftA*bottomB-leftB*bottomA;
 	CvPoint ptBottomLeft = cvPoint((bottomB*leftC-leftB*bottomC)/detBottomLeft, (leftA*bottomC-bottomA*leftC)/detBottomLeft);
 	
+	// Now we draw the intersection points on the image
 	cv::line(sudoku, ptTopRight, ptTopRight, CV_RGB(255,0,0), 10);
 	cv::line(sudoku, ptTopLeft, ptTopLeft, CV_RGB(255,0,0), 10);
 	cv::line(sudoku, ptBottomRight, ptBottomRight, CV_RGB(255,0,0), 10);
 	cv::line(sudoku, ptBottomLeft, ptBottomLeft, CV_RGB(255,0,0), 10);
 	
+	imshow("Sudoku with edges and edge lines", sudoku);
+	
+
 	// Correct the perspective transform
+	// We have the points. Now we can correct the skewed perspective. First, we find the longest edge of the puzzle. 
+	// The new image will be a square of the length of the longest edge.
+	// Simple code. We calculate the length of each edge. Whenever we find a longer edge, we store its length squared. 
 	int maxLength = (ptBottomLeft.x-ptBottomRight.x)*(ptBottomLeft.x-ptBottomRight.x) + (ptBottomLeft.y-ptBottomRight.y)*(ptBottomLeft.y-ptBottomRight.y);
 	int temp = (ptTopRight.x-ptBottomRight.x)*(ptTopRight.x-ptBottomRight.x) + (ptTopRight.y-ptBottomRight.y)*(ptTopRight.y-ptBottomRight.y);
 	if(temp>maxLength) maxLength = temp;
-	
+	// 
 	temp = (ptTopRight.x-ptTopLeft.x)*(ptTopRight.x-ptTopLeft.x) + (ptTopRight.y-ptTopLeft.y)*(ptTopRight.y-ptTopLeft.y);
 	if(temp>maxLength) maxLength = temp;
 	
 	temp = (ptBottomLeft.x-ptTopLeft.x)*(ptBottomLeft.x-ptTopLeft.x) + (ptBottomLeft.y-ptTopLeft.y)*(ptBottomLeft.y-ptTopLeft.y);
 	if(temp>maxLength) maxLength = temp;
-	
+	// And finally when we have the longest edge, we do a square root to get its exact length.
 	maxLength = sqrt((double)maxLength);
 	
-	
+	// We create source and destination points
+	// The top left point in the source is equivalent to the point (0,0) in the corrected image. And so on.
 	Point2f src[4], dst[4];
-	src[0] = ptTopLeft;			dst[0] = Point2f(0,0);
-	src[1] = ptTopRight;		dst[1] = Point2f(maxLength-1, 0);
+	src[0] = ptTopLeft;			  dst[0] = Point2f(0,0);
+	src[1] = ptTopRight;		  dst[1] = Point2f(maxLength-1, 0);
 	src[2] = ptBottomRight;		dst[2] = Point2f(maxLength-1, maxLength-1);
 	src[3] = ptBottomLeft;		dst[3] = Point2f(0, maxLength-1);
 	
+	// We create a new image and do the undistortion
 	Mat undistorted = Mat(Size(maxLength, maxLength), CV_8UC1);
 	cv::warpPerspective(original, undistorted, cv::getPerspectiveTransform(src, dst), Size(maxLength, maxLength));
 	
-	STOP_TIMING(sudTimer);
-	
-	printf("Time taken: %f\n", GET_TIMING(sudTimer));
-	imshow("Lines", outerBox);
-	imshow("SuDoKu", sudoku);
+	//imshow("Lines", outerBox);
 	
 	Mat undistortedThreshed = undistorted.clone();
 	
@@ -418,15 +284,6 @@ int main()
 	
 	imshow("undistorted", undistortedThreshed);
 	waitKey(0);
-	
-	// Fill edges with black color
-	/*for(int l=0;l<dist/10;l++)
-	{
-		floodFill(currentCell, Point(l,l), cvScalar(0));
-		floodFill(currentCell, Point(l,dist-l-1), cvScalar(0));
-		floodFill(currentCell, Point(dist-l-1,l), cvScalar(0));
-		floodFill(currentCell, Point(dist-l-1,dist-l-1), cvScalar(0));
-	}*/
 	
 	return 0;
 }

@@ -13,6 +13,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(sudokusolver
   ${CMAKE_SOURCE_DIR}/src/sudokusolver.cpp
+  ${CMAKE_SOURCE_DIR}/src/sudoku-tools.cpp
 )
 
 target_link_libraries(sudokusolver 
