@@ -1,14 +1,10 @@
 // Sudoku Solver.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
-
-#include <cv.h>
-#include <highgui.h>
-
 #include "digitrecognizer.h"
 
 using namespace cv;
+using namespace std;
 
 // Record the execution time of some code, in milliseconds.
 #define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
@@ -430,6 +426,8 @@ STOP_TIMING(sudTimer);
 
 	imshow("undistorted", undistortedThreshed);
 	waitKey(0);
+	
+	// Digit recognizing
 
 	DigitRecognizer *dr = new DigitRecognizer();
 	bool b = dr->train("D:/Test/Character Recognition/train-images.idx3-ubyte", "D:/Test/Character Recognition/train-labels.idx1-ubyte");

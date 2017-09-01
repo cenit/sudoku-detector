@@ -1,8 +1,13 @@
-#include <cv.h>
-#include <highgui.h>
-#include <ml.h>
+//#include <opencv2/opencv.hpp>
+//#include <opencv2/highgui.hpp>
+//#include <opencv2/imgproc.hpp>
+//#include <opencv2/ml.hpp>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <opencv/ml.h>
 
 using namespace cv;
+using namespace cv::ml;
 
 #define MAX_NUM_IMAGES	60000
 

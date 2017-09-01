@@ -1,4 +1,4 @@
-#include "stdafx.h"
+
 #include "digitrecognizer.h"
 
 DigitRecognizer::DigitRecognizer()
