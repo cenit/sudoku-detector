@@ -180,31 +180,43 @@ int main()
 
   if (leftEdge[1] != 0)
   {
-    left1.x = 0;		left1.y = leftEdge[0] / sin(leftEdge[1]);
-    left2.x = width;	left2.y = -left2.x / tan(leftEdge[1]) + left1.y;
+    left1.x = 0;
+    left1.y = (int)(leftEdge[0] / sin(leftEdge[1]));
+    left2.x = width;
+    left2.y = (int)(-left2.x / tan(leftEdge[1]) + left1.y);
   }
   else
   {
-    left1.y = 0;		left1.x = leftEdge[0] / cos(leftEdge[1]);
-    left2.y = height;	left2.x = left1.x - height*tan(leftEdge[1]);
+    left1.y = 0;
+    left1.x = (int)(leftEdge[0] / cos(leftEdge[1]));
+    left2.y = height;
+    left2.x = (int)(left1.x - height*tan(leftEdge[1]));
   }
 
   if (rightEdge[1] != 0)
   {
-    right1.x = 0;		right1.y = rightEdge[0] / sin(rightEdge[1]);
-    right2.x = width;	right2.y = -right2.x / tan(rightEdge[1]) + right1.y;
+    right1.x = 0;
+    right1.y = (int)(rightEdge[0] / sin(rightEdge[1]));
+    right2.x = width;
+    right2.y = (int)(-right2.x / tan(rightEdge[1]) + right1.y);
   }
   else
   {
-    right1.y = 0;		right1.x = rightEdge[0] / cos(rightEdge[1]);
-    right2.y = height;	right2.x = right1.x - height*tan(rightEdge[1]);
+    right1.y = 0;
+    right1.x = (int)(rightEdge[0] / cos(rightEdge[1]));
+    right2.y = height;
+    right2.x = (int)(right1.x - height*tan(rightEdge[1]));
   }
 
-  bottom1.x = 0;	bottom1.y = bottomEdge[0] / sin(bottomEdge[1]);
-  bottom2.x = width; bottom2.y = -bottom2.x / tan(bottomEdge[1]) + bottom1.y;
+  bottom1.x = 0;
+  bottom1.y = (int)(bottomEdge[0] / sin(bottomEdge[1]));
+  bottom2.x = width;
+  bottom2.y = (int)(-bottom2.x / tan(bottomEdge[1]) + bottom1.y);
 
-  top1.x = 0;		top1.y = topEdge[0] / sin(topEdge[1]);
-  top2.x = width;	top2.y = -top2.x / tan(topEdge[1]) + top1.y;
+  top1.x = 0;
+  top1.y = (int)(topEdge[0] / sin(topEdge[1]));
+  top2.x = width;
+  top2.y = (int)(-top2.x / tan(topEdge[1]) + top1.y);
 
   // This part calculates the actual intersection points
   double leftA = left2.y - left1.y;
@@ -225,19 +237,19 @@ int main()
 
   // Intersection of left and top
   double detTopLeft = leftA*topB - leftB*topA;
-  CvPoint ptTopLeft = cvPoint((topB*leftC - leftB*topC) / detTopLeft, (leftA*topC - topA*leftC) / detTopLeft);
+  CvPoint ptTopLeft = cvPoint((int)((topB*leftC - leftB*topC) / detTopLeft), (int)((leftA*topC - topA*leftC) / detTopLeft));
 
   // Intersection of top and right
   double detTopRight = rightA*topB - rightB*topA;
-  CvPoint ptTopRight = cvPoint((topB*rightC - rightB*topC) / detTopRight, (rightA*topC - topA*rightC) / detTopRight);
+  CvPoint ptTopRight = cvPoint((int)((topB*rightC - rightB*topC) / detTopRight), (int)((rightA*topC - topA*rightC) / detTopRight));
 
   // Intersection of right and bottom
   double detBottomRight = rightA*bottomB - rightB*bottomA;
-  CvPoint ptBottomRight = cvPoint((bottomB*rightC - rightB*bottomC) / detBottomRight, (rightA*bottomC - bottomA*rightC) / detBottomRight);
+  CvPoint ptBottomRight = cvPoint((int)((bottomB*rightC - rightB*bottomC) / detBottomRight), (int)((rightA*bottomC - bottomA*rightC) / detBottomRight));
 
   // Intersection of bottom and left
   double detBottomLeft = leftA*bottomB - leftB*bottomA;
-  CvPoint ptBottomLeft = cvPoint((bottomB*leftC - leftB*bottomC) / detBottomLeft, (leftA*bottomC - bottomA*leftC) / detBottomLeft);
+  CvPoint ptBottomLeft = cvPoint((int)((bottomB*leftC - leftB*bottomC) / detBottomLeft), (int)((leftA*bottomC - bottomA*leftC) / detBottomLeft));
 
   // Now we draw the intersection points on the image
   cv::line(sudoku, ptTopRight, ptTopRight, CV_RGB(255, 0, 0), 10);
@@ -262,15 +274,20 @@ int main()
   temp = (ptBottomLeft.x - ptTopLeft.x)*(ptBottomLeft.x - ptTopLeft.x) + (ptBottomLeft.y - ptTopLeft.y)*(ptBottomLeft.y - ptTopLeft.y);
   if (temp > maxLength) maxLength = temp;
   // And finally when we have the longest edge, we do a square root to get its exact length.
-  maxLength = sqrt((double)maxLength);
+  maxLength = (int)(sqrt((double)maxLength));
 
   // We create source and destination points
   // The top left point in the source is equivalent to the point (0,0) in the corrected image. And so on.
   Point2f src[4], dst[4];
-  src[0] = ptTopLeft;		    dst[0] = Point2f(0, 0);
-  src[1] = ptTopRight;	    dst[1] = Point2f(maxLength - 1, 0);
-  src[2] = ptBottomRight;		dst[2] = Point2f(maxLength - 1, maxLength - 1);
-  src[3] = ptBottomLeft;		dst[3] = Point2f(0, maxLength - 1);
+  src[0] = ptTopLeft;
+  src[1] = ptTopRight;
+  src[2] = ptBottomRight;
+  src[3] = ptBottomLeft;
+
+  dst[0] = Point2f(0.0f, 0.0f);
+  dst[1] = Point2f(maxLength - 1.0f, 0.0f);
+  dst[2] = Point2f(maxLength - 1.0f, maxLength - 1.0f);
+  dst[3] = Point2f(0.0f, maxLength - 1.0f);
 
   // We create a new image and do the undistortion
   Mat undistorted = Mat(Size(maxLength, maxLength), CV_8UC1);

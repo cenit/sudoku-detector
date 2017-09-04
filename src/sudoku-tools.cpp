@@ -11,11 +11,11 @@ void drawLine(Vec2f line, Mat &img, Scalar rgb)
     float m = -1 / tan(line[1]);
     float c = line[0] / sin(line[1]);
 
-    cv::line(img, Point(0, c), Point(img.size().width, m*img.size().width + c), rgb);
+    cv::line(img, Point(0, (int)c), Point(img.size().width, (int)(m*img.size().width + c)), rgb);
   }
   else
   {
-    cv::line(img, Point(line[0], 0), Point(line[0], img.size().height), rgb);
+    cv::line(img, Point((int)line[0], 0), Point((int)(line[0]), img.size().height), rgb);
   }
 }
 
@@ -44,18 +44,18 @@ void mergeRelatedLines(vector<Vec2f> *lines, Mat &img)
     if (theta1 > CV_PI * 45 / 180 && theta1 < CV_PI * 135 / 180)
     {
       pt1current.x = 0;
-      pt1current.y = p1 / sin(theta1);
+      pt1current.y = (int)(p1 / sin(theta1));
 
       pt2current.x = img.size().width;
-      pt2current.y = -pt2current.x / tan(theta1) + p1 / sin(theta1);
+      pt2current.y = (int)(-pt2current.x / tan(theta1) + p1 / sin(theta1));
     }
     else
     {
       pt1current.y = 0;
-      pt1current.x = p1 / cos(theta1);
+      pt1current.x = (int)(p1 / cos(theta1));
 
       pt2current.y = img.size().height;
-      pt2current.x = -pt2current.y / tan(theta1) + p1 / cos(theta1);
+      pt2current.x = (int)(-pt2current.y / tan(theta1) + p1 / cos(theta1));
     }
 
     // We start iterating over the lines again
@@ -79,18 +79,18 @@ void mergeRelatedLines(vector<Vec2f> *lines, Mat &img)
         if ((*pos)[1] > CV_PI * 45 / 180 && (*pos)[1] < CV_PI * 135 / 180)
         {
           pt1.x = 0;
-          pt1.y = p / sin(theta);
+          pt1.y = (int)(p / sin(theta));
 
           pt2.x = img.size().width;
-          pt2.y = -pt2.x / tan(theta) + p / sin(theta);
+          pt2.y = (int)(-pt2.x / tan(theta) + p / sin(theta));
         }
         else
         {
           pt1.y = 0;
-          pt1.x = p / cos(theta);
+          pt1.x = (int)(p / cos(theta));
 
           pt2.y = img.size().height;
-          pt2.x = -pt2.y / tan(theta) + p / cos(theta);
+          pt2.x = (int)(-pt2.y / tan(theta) + p / cos(theta));
         }
 
         // If endpoints of the line pos and the line current are close to each other, we fuse them:
