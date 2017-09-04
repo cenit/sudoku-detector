@@ -1,3 +1,6 @@
+// Copyright Utkarsh Sinha (2010)
+// Modified Stefano Sinigardi (2017)
+
 #pragma once
 
 #include <opencv2/opencv.hpp>

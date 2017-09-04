@@ -1,3 +1,5 @@
+// Copyright Utkarsh Sinha (2010)
+// Modified Stefano Sinigardi (2017)
 
 #include "sudoku-tools.h"
 
