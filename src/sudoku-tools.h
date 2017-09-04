@@ -7,6 +7,6 @@
 using namespace cv;
 using namespace std;
 
-void drawLine(Vec2f line, Mat &img, Scalar rgb = CV_RGB(0,0,255));
+void drawLine(Vec2f line, Mat &img, Scalar rgb = CV_RGB(0, 0, 255));
 void mergeRelatedLines(vector<Vec2f> *lines, Mat &img);
 
