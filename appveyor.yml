@@ -7,9 +7,9 @@ environment:
     - platform: cygwin64
       COMPILER: cygwin
       CYGWIN_NOWINPATH: yes
-    - platform: Win32
-      COMPILER: vs
-      LINKING: static
+#    - platform: Win32
+#      COMPILER: vs
+#      LINKING: static
     - platform: Win32
       COMPILER: vs
       LINKING: dynamic
