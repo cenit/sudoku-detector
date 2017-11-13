@@ -60,8 +60,7 @@ configure_link_flags()
 #print_link_flags()
 endif()
 
-find_package(OpenCV 3 REQUIRED HINTS /usr/local/opt/opencv3)
-#find_package(OpenCV REQUIRED HINTS /usr/local/opt/opencv)
+find_package(OpenCV REQUIRED HINTS /usr/local/opt/opencv3)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(sudokusolver
