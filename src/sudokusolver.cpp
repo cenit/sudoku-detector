@@ -10,10 +10,10 @@ int main()
   Mat sudoku = imread("../data/sudoku-original.jpg", 0);
 
   // we create a blank image of the same size. This image will hold the actual outer box of puzzle:
-  Mat original = sudoku.clone();
+  Mat outerBox = Mat(sudoku.size(), CV_8UC1);
 
   // Create a duplicate. We'll try to extract grid lines in this image
-  Mat outerBox = Mat(sudoku.size(), CV_8UC1);
+  Mat original = sudoku.clone();
 
   // Blur the image a little. This smooths out the noise a bit and makes extracting the grid lines easier.
   GaussianBlur(sudoku, sudoku, Size(11, 11), 0);
@@ -24,6 +24,9 @@ int main()
   // This threshold level is calculated using the mean level in the window, so it keeps things illumination independent.
   // It calculates a mean over a 5x5 window and subtracts 2 from the mean. This is the threshold level for every pixel.
   adaptiveThreshold(sudoku, outerBox, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
+
+  imshow("thresholded", outerBox);
+  waitKey(0);
 
   // Since we're interested in the borders, and they are black, we invert the image outerBox. 
   // Then, the borders of the puzzles are white (along with other noise).
