@@ -1,4 +1,4 @@
-Here's the code for the SuDoKu detection tutorial at AI Shack. In this branch the code stops after having found the main grid.
+Here's the code for the SuDoKu detection tutorial at AI Shack.
 Ported to OpenCV 3 (WIP).
 
 http://aishack.in/tutorials/sudoku-grabber-opencv-detection/
