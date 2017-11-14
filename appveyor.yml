@@ -1,5 +1,5 @@
 image: Visual Studio 2017
-clone_folder: c:\projects\fisica1
+clone_folder: c:\projects\sudoku-detector
 configuration: Release
 
 environment:
@@ -36,7 +36,7 @@ install:
   - if [%COMPILER%]==[vs] if [%LINKING%]==[dynamic] vcpkg install opencv
   - if [%COMPILER%]==[vs] if [%LINKING%]==[static] vcpkg install opencv:x86-windows-static
   - cd ..
-  - cd C:\projects\fisica1
+  - cd C:\projects\sudoku-detector
 
 build_script:
   - mkdir build
