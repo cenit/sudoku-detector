@@ -6,7 +6,7 @@
 
 int main()
 {
-  // We load the image in grayscale mode. We don't want to bother with the colour information, so just skip it. 
+  // We load the image in grayscale mode. We don't want to bother with the colour information, so just skip it.
   Mat sudoku = imread("../data/sudoku-original.jpg", 0);
 
   // we create a blank image of the same size. This image will hold the actual outer box of puzzle:
@@ -18,9 +18,9 @@ int main()
   // Blur the image a little. This smooths out the noise a bit and makes extracting the grid lines easier.
   GaussianBlur(sudoku, sudoku, Size(11, 11), 0);
 
-  // With the noise smoothed out, we can now threshold the image. 
+  // With the noise smoothed out, we can now threshold the image.
   // The image can have varying illumination levels, so a good choice for a thresholding algorithm would be an adaptive threshold.
-  // It calculates a threshold level several small windows in the image. 
+  // It calculates a threshold level several small windows in the image.
   // This threshold level is calculated using the mean level in the window, so it keeps things illumination independent.
   // It calculates a mean over a 5x5 window and subtracts 2 from the mean. This is the threshold level for every pixel.
   adaptiveThreshold(sudoku, outerBox, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, 5, 2);
@@ -28,11 +28,11 @@ int main()
   imshow("thresholded", outerBox);
   waitKey(0);
 
-  // Since we're interested in the borders, and they are black, we invert the image outerBox. 
+  // Since we're interested in the borders, and they are black, we invert the image outerBox.
   // Then, the borders of the puzzles are white (along with other noise).
   bitwise_not(outerBox, outerBox);
 
-  // This thresholding operation can disconnect certain connected parts (like lines). 
+  // This thresholding operation can disconnect certain connected parts (like lines).
   // So dilating the image once will fill up any small "cracks" that might have crept in.
   // Note that I've used a plus shaped structuring element here (the kernel matrix).
   Mat kernel = (Mat_<uchar>(3, 3) << 0, 1, 0, 1, 1, 1, 0, 1, 0);
@@ -40,12 +40,12 @@ int main()
 
 
   // Finding the biggest blob
-  // First, I use the floodfill command. This command returns a bounding rectangle of the pixels it filled. 
-  // We've assumed the biggest thing in the picture to be the puzzle. So the biggest blob should have be the puzzle. 
-  // Since it is the biggest, it will have the biggest bounding box as well. 
+  // First, I use the floodfill command. This command returns a bounding rectangle of the pixels it filled.
+  // We've assumed the biggest thing in the picture to be the puzzle. So the biggest blob should have be the puzzle.
+  // Since it is the biggest, it will have the biggest bounding box as well.
   // So we find the biggest bounding box, and save the location where we did the flood fill.
-  // We iterate through the image. The >=128 condition is to ensure that only the white parts are flooded. 
-  // Whenever we encounter such a part, we flood it with a dark gray colour (gray level 64). 
+  // We iterate through the image. The >=128 condition is to ensure that only the white parts are flooded.
+  // Whenever we encounter such a part, we flood it with a dark gray colour (gray level 64).
   // So in the future, we won't be reflooding these blobs. And whenever we encounter a big blob, we note the current point and the area it has.
   int count = 0;
   int max = -1;
@@ -69,7 +69,7 @@ int main()
     }
   }
 
-  // Now, we have several blobs filled with a dark gray colour (level 64). 
+  // Now, we have several blobs filled with a dark gray colour (level 64).
   // And we also know the point what produces a blob with maximum area. So we floodfill that point with white
   floodFill(outerBox, maxPt, CV_RGB(255, 255, 255));
 
@@ -94,12 +94,12 @@ int main()
 
 
   // Detecting lines
-  // At this point, we have a single blob. Now its time to find lines. This is done with the Hough transform. 
+  // At this point, we have a single blob. Now its time to find lines. This is done with the Hough transform.
   // OpenCV comes with it. So a line of code is all that's needed.
   vector<Vec2f> lines;
   HoughLines(outerBox, lines, 1, CV_PI / 180, 200);
 
-  // Each physical line has several possible approximations. This is usually because the physical line is thick. 
+  // Each physical line has several possible approximations. This is usually because the physical line is thick.
   // So, just these lines aren't enough for figuring out where the puzzle is located. We'll have to do some math with these lines.
   // One way to fix this is to "merge" lines that are close by. We wrote mergeRelatedLines to do it!
   mergeRelatedLines(&lines, sudoku);
@@ -113,9 +113,9 @@ int main()
 
   imshow("thresholded", outerBox);
 
-  // We'll try and detect lines that are nearest to the top edge, bottom edge, right edge and the left edge. 
+  // We'll try and detect lines that are nearest to the top edge, bottom edge, right edge and the left edge.
   // These will be the outer boundaries of the sudoku puzzle. We start by adding these lines after the mergeRelatedLines call.
-  // The initial values of each edge is initially set to a ridiculous value. This will ensure it gets to the proper edge later on. 
+  // The initial values of each edge is initially set to a ridiculous value. This will ensure it gets to the proper edge later on.
   Vec2f topEdge = Vec2f(1000, 1000);	      double topYIntercept = 100000, topXIntercept = 0;
   Vec2f bottomEdge = Vec2f(-1000, -1000);	double bottomYIntercept = 0, bottomXIntercept = 0;
   Vec2f leftEdge = Vec2f(1000, 1000);	    double leftXIntercept = 100000, leftYIntercept = 0;
@@ -125,7 +125,7 @@ int main()
   for (int i = 0; i < lines.size(); i++)
   {
     Vec2f current = lines[i];
-    // We store the rho and theta values. 
+    // We store the rho and theta values.
     float p = current[0];
     float theta = current[1];
 
@@ -137,7 +137,7 @@ int main()
     xIntercept = p / cos(theta);
     yIntercept = p / (cos(theta)*sin(theta));
 
-    // We will ignore any line that has slope different from horizontal or vertical. 
+    // We will ignore any line that has slope different from horizontal or vertical.
     // Vertical case:
     if (theta > CV_PI * 80 / 180 && theta < CV_PI * 100 / 180)
     {
@@ -170,11 +170,11 @@ int main()
   drawLine(rightEdge, sudoku, CV_RGB(0, 0, 0));
 
 
-  // Next, we'll calculate the intersections of these four lines. First, we find two points on each line. 
+  // Next, we'll calculate the intersections of these four lines. First, we find two points on each line.
   // Then using some math, we can calculate exactly where any two particular lines intersect.
-  // The code below finds two points on a line. The right and left edges need the "if" construct. 
-  // These edges are vertical. They can have infinite slope, something a computer cannot represent. 
-  // So I check if they have infinite slope or not. If it does, calculate two points using a "safe" method. 
+  // The code below finds two points on a line. The right and left edges need the "if" construct.
+  // These edges are vertical. They can have infinite slope, something a computer cannot represent.
+  // So I check if they have infinite slope or not. If it does, calculate two points using a "safe" method.
   // Otherwise, the normal method can be used.
   Point left1, left2, right1, right2, bottom1, bottom2, top1, top2;
 
@@ -240,37 +240,37 @@ int main()
 
   // Intersection of left and top
   double detTopLeft = leftA*topB - leftB*topA;
-  CvPoint ptTopLeft = cvPoint((int)((topB*leftC - leftB*topC) / detTopLeft), (int)((leftA*topC - topA*leftC) / detTopLeft));
+  Point ptTopLeft = Point((int)((topB*leftC - leftB*topC) / detTopLeft), (int)((leftA*topC - topA*leftC) / detTopLeft));
 
   // Intersection of top and right
   double detTopRight = rightA*topB - rightB*topA;
-  CvPoint ptTopRight = cvPoint((int)((topB*rightC - rightB*topC) / detTopRight), (int)((rightA*topC - topA*rightC) / detTopRight));
+  Point ptTopRight = Point((int)((topB*rightC - rightB*topC) / detTopRight), (int)((rightA*topC - topA*rightC) / detTopRight));
 
   // Intersection of right and bottom
   double detBottomRight = rightA*bottomB - rightB*bottomA;
-  CvPoint ptBottomRight = cvPoint((int)((bottomB*rightC - rightB*bottomC) / detBottomRight), (int)((rightA*bottomC - bottomA*rightC) / detBottomRight));
+  Point ptBottomRight = Point((int)((bottomB*rightC - rightB*bottomC) / detBottomRight), (int)((rightA*bottomC - bottomA*rightC) / detBottomRight));
 
   // Intersection of bottom and left
   double detBottomLeft = leftA*bottomB - leftB*bottomA;
-  CvPoint ptBottomLeft = cvPoint((int)((bottomB*leftC - leftB*bottomC) / detBottomLeft), (int)((leftA*bottomC - bottomA*leftC) / detBottomLeft));
+  Point ptBottomLeft = Point((int)((bottomB*leftC - leftB*bottomC) / detBottomLeft), (int)((leftA*bottomC - bottomA*leftC) / detBottomLeft));
 
   // Now we draw the intersection points on the image
-  cv::line(sudoku, ptTopRight, ptTopRight, CV_RGB(255, 0, 0), 10);
-  cv::line(sudoku, ptTopLeft, ptTopLeft, CV_RGB(255, 0, 0), 10);
-  cv::line(sudoku, ptBottomRight, ptBottomRight, CV_RGB(255, 0, 0), 10);
-  cv::line(sudoku, ptBottomLeft, ptBottomLeft, CV_RGB(255, 0, 0), 10);
+  line(sudoku, ptTopRight, ptTopRight, RGB(255, 0, 0), 10);
+  line(sudoku, ptTopLeft, ptTopLeft, RGB(255, 0, 0), 10);
+  line(sudoku, ptBottomRight, ptBottomRight, RGB(255, 0, 0), 10);
+  line(sudoku, ptBottomLeft, ptBottomLeft, RGB(255, 0, 0), 10);
 
   imshow("Sudoku with edges and edge lines", sudoku);
 
 
   // Correct the perspective transform
-  // We have the points. Now we can correct the skewed perspective. First, we find the longest edge of the puzzle. 
+  // We have the points. Now we can correct the skewed perspective. First, we find the longest edge of the puzzle.
   // The new image will be a square of the length of the longest edge.
-  // Simple code. We calculate the length of each edge. Whenever we find a longer edge, we store its length squared. 
+  // Simple code. We calculate the length of each edge. Whenever we find a longer edge, we store its length squared.
   int maxLength = (ptBottomLeft.x - ptBottomRight.x)*(ptBottomLeft.x - ptBottomRight.x) + (ptBottomLeft.y - ptBottomRight.y)*(ptBottomLeft.y - ptBottomRight.y);
   int temp = (ptTopRight.x - ptBottomRight.x)*(ptTopRight.x - ptBottomRight.x) + (ptTopRight.y - ptBottomRight.y)*(ptTopRight.y - ptBottomRight.y);
   if (temp > maxLength) maxLength = temp;
-  // 
+  //
   temp = (ptTopRight.x - ptTopLeft.x)*(ptTopRight.x - ptTopLeft.x) + (ptTopRight.y - ptTopLeft.y)*(ptTopRight.y - ptTopLeft.y);
   if (temp > maxLength) maxLength = temp;
 
@@ -294,19 +294,18 @@ int main()
 
   // We create a new image and do the undistortion
   Mat undistorted = Mat(Size(maxLength, maxLength), CV_8UC1);
-  cv::warpPerspective(original, undistorted, cv::getPerspectiveTransform(src, dst), Size(maxLength, maxLength));
+  warpPerspective(original, undistorted, getPerspectiveTransform(src, dst), Size(maxLength, maxLength));
 
   //imshow("Lines", outerBox);
 
   Mat undistortedThreshed = undistorted.clone();
 
   // Show this sample
-  //threshold(undistorted, undistortedThreshed, 128, 255, CV_THRESH_BINARY_INV);
-  adaptiveThreshold(undistorted, undistortedThreshed, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY_INV, 101, 1);
+  //threshold(undistorted, undistortedThreshed, 128, 255, THRESH_BINARY_INV);
+  adaptiveThreshold(undistorted, undistortedThreshed, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV, 101, 1);
 
   imshow("undistorted", undistortedThreshed);
   waitKey(0);
 
   return 0;
 }
-
