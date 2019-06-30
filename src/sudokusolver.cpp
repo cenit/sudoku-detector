@@ -255,10 +255,10 @@ int main()
   Point ptBottomLeft = Point((int)((bottomB*leftC - leftB*bottomC) / detBottomLeft), (int)((leftA*bottomC - bottomA*leftC) / detBottomLeft));
 
   // Now we draw the intersection points on the image
-  line(sudoku, ptTopRight, ptTopRight, RGB(255, 0, 0), 10);
-  line(sudoku, ptTopLeft, ptTopLeft, RGB(255, 0, 0), 10);
-  line(sudoku, ptBottomRight, ptBottomRight, RGB(255, 0, 0), 10);
-  line(sudoku, ptBottomLeft, ptBottomLeft, RGB(255, 0, 0), 10);
+  line(sudoku, ptTopRight, ptTopRight, CV_RGB(255, 0, 0), 10);
+  line(sudoku, ptTopLeft, ptTopLeft, CV_RGB(255, 0, 0), 10);
+  line(sudoku, ptBottomRight, ptBottomRight, CV_RGB(255, 0, 0), 10);
+  line(sudoku, ptBottomLeft, ptBottomLeft, CV_RGB(255, 0, 0), 10);
 
   imshow("Sudoku with edges and edge lines", sudoku);
 
