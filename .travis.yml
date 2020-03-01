@@ -1,34 +1,63 @@
 language: cpp
-
-os:
-  - linux
-  - osx
-
-compiler:
-    - gcc
-    - clang
-
-addons:
-  apt:
-    packages:
-    - libopencv-dev
+cache:
+  timeout: 1000
+  directories:
+    - $HOME/vcpkg
 
 matrix:
-    exclude:
-    - os: osx
-      compiler: gcc
+  include:
+
     - os: linux
-      compiler: clang
+      compiler: gcc
+      dist: bionic
+      name: ubuntu
+      addons:
+        apt:
+          update: true
+          packages:
+            - yasm
+      env:
+        - additional_defines=""
+        - MATRIX_EVAL=""
+
+    - os: linux
+      compiler: gcc
+      dist: bionic
+      name: ubuntu - CUDA 10
+      addons:
+        apt:
+          update: true
+          packages:
+            - yasm
+      env:
+        - additional_defines=""
+        - CUDACXX=/usr/local/cuda-10.0/bin/nvcc
+        - LD_LIBRARY_PATH="/usr/local/cuda-10.0/lib64:/usr/local/cuda-10.0/lib64/stubs:${LD_LIBRARY_PATH}"
+        - MATRIX_EVAL="wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_10.0.130-1_amd64.deb && sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/7fa2af80.pub && sudo dpkg -i cuda-repo-ubuntu1404_10.0.130-1_amd64.deb && wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/nvidia-machine-learning-repo-ubuntu1404_4.0-2_amd64.deb && sudo dpkg -i nvidia-machine-learning-repo-ubuntu1404_4.0-2_amd64.deb && sudo apt-get -y update && sudo apt-get install -y --no-install-recommends cuda-compiler-10-0 cuda-libraries-dev-10-0 cuda-driver-dev-10-0 cuda-cudart-dev-10-0 cuda-cublas-dev-10-0 cuda-curand-dev-10-0 && sudo apt-get install -y --no-install-recommends libcudnn7-dev && sudo ln -s /usr/local/cuda-10.0/lib64/stubs/libcuda.so /usr/local/cuda-10.0/lib64/stubs/libcuda.so.1"
+
+before_install:
+  - travis_retry eval "${MATRIX_EVAL}"
 
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew update                                                                               ;fi
-  #remove numpy installed by pip, incompatible with opencv
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then /usr/bin/yes | pip uninstall numpy                                                        ;fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv                                                                       ;fi
+  - pushd $HOME
+  - if [ -d "$HOME/vcpkg/.git" ] ; then echo vcpkg cached ; else rm -rf vcpkg ; git clone https://github.com/Microsoft/vcpkg ; fi
+  - cd vcpkg
+  - git checkout .
+  - git pull
+  - ./bootstrap-vcpkg.sh
+  - echo "set(VCPKG_BUILD_TYPE release)" >> triplets/x64-osx.cmake
+  - echo "set(VCPKG_BUILD_TYPE release)" >> triplets/x64-linux.cmake
+  - rm -rf buildtrees
+  - travis_wait ./vcpkg install opencv[ffmpeg] --recurse
+  - rm -rf buildtrees
+  - popd
 
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget --no-check-certificate http://cmake.org/files/v3.8/cmake-3.8.0-Linux-x86_64.tar.gz   ;fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xzf cmake-3.8.0-Linux-x86_64.tar.gz                                                  ;fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export PATH=$PWD/cmake-3.8.0-Linux-x86_64/bin:$PATH                                       ;fi
+before_script:
+  - echo ${additional_defines}
+  - mkdir build_release
+  - cd build_release
+  - cmake .. -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake ${additional_defines}
+  - cd ..
 
 script:
-  - mkdir build && cd build && cmake .. && cmake --build .
+  - cd build_release && cmake --build .  -- -j8 && cd ..
